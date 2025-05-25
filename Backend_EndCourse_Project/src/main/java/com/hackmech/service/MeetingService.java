@@ -34,4 +34,27 @@ public class MeetingService {
                 )).collect(Collectors.toList());
     }
 
+    public List<MeetingDTO> getMeetingsByAttendeeId(Long userId) {
+        List<Meeting> meetings = meetingRepository.findMeetingsByAttendeeId(userId);
+
+        return meetings.stream().map(meeting -> {
+            String roomName = meeting.getRoom() != null ? meeting.getRoom().getName() : null;
+
+            return new MeetingDTO(
+                    meeting.getId(),
+                    meeting.getTitle(),
+                    meeting.getDescription(),
+                    meeting.getStartTime(),
+                    meeting.getEndTime(),
+                    new RoomDTO(
+                            meeting.getRoom().getId(),
+                            meeting.getRoom().getName(),
+                            meeting.getRoom().getLocation(),
+                            meeting.getRoom().getCapacity()
+                    )
+            );
+        }).collect(Collectors.toList());
+    }
+
+
 }

@@ -1,7 +1,6 @@
 package com.hackmech.controller;
 
 import com.hackmech.dto.MeetingDTO;
-import com.hackmech.entity.Meeting;
 import com.hackmech.payload.ApiResponse;
 import com.hackmech.service.MeetingService;
 import jakarta.servlet.http.Cookie;
@@ -41,4 +40,11 @@ public class MeetingController {
         List<MeetingDTO> meetings = meetingService.getMeetingsByHostId(userId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Meetings fetched successfully", meetings));
     }
+
+    @GetMapping("/attendees-meetings")
+    public ResponseEntity<ApiResponse<List<MeetingDTO>>> getUserMeetings(@CookieValue("userId") Long userId) {
+        List<MeetingDTO> meetings = meetingService.getMeetingsByAttendeeId(userId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Meetings fetched successfully", meetings));
+    }
+
 }
