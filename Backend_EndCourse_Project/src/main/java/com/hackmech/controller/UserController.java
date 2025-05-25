@@ -1,17 +1,17 @@
 package com.hackmech.controller;
 
 import com.hackmech.dto.LoginRequest;
+import com.hackmech.dto.UserDTO;
 import com.hackmech.entity.User;
 import com.hackmech.payload.ApiResponse;
 import com.hackmech.service.UserService;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -42,5 +42,26 @@ public class UserController {
             return ResponseEntity.status(401)
                     .body(new ApiResponse<>(false, "Invalid email or password", null));
         }
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<UserDTO>> getProfile(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        Long userId = null;
+
+        for (Cookie cookie : cookies) {
+            if ("userId".equals(cookie.getName())) {
+                userId = Long.valueOf(cookie.getValue());
+                break;
+            }
+        }
+
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "User not logged in", null));
+        }
+
+        UserDTO userDTO = userService.getUserDtoById(userId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "User fetched successfully", userDTO));
     }
 }

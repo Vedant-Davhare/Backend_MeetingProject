@@ -1,5 +1,6 @@
 package com.hackmech.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,6 +21,7 @@ public class Room {
     private int capacity;
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Meeting> meetings = new HashSet<>();
 
     public Room() {
