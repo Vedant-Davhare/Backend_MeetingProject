@@ -1,6 +1,7 @@
 package com.hackmech.dto;
 
 import com.hackmech.entity.Role;
+import com.hackmech.entity.User;
 
 import java.time.LocalDateTime;
 

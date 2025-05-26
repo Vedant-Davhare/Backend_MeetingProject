@@ -1,67 +1,61 @@
 package com.hackmech.controller;
 
-import com.hackmech.dto.LoginRequest;
 import com.hackmech.dto.UserDTO;
-import com.hackmech.entity.User;
+import com.hackmech.entity.Role;
+import com.hackmech.exception.UnauthorizedAccessException;
+import com.hackmech.exception.UserNotLoggedInException;
 import com.hackmech.payload.ApiResponse;
 import com.hackmech.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/users")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginRequest request, HttpServletResponse response) {
-        System.out.println(request.getEmail());
-        System.out.println(request.getPassword());
-        boolean authenticated = userService.authenticate(request.getEmail(), request.getPassword());
-
-        if (authenticated) {
-            // Fetch the user from DB
-            User user = userService.getUserByEmail(request.getEmail());
-
-            // Set cookie (you can choose to store user.getId() or other safe identifier)
-            Cookie userCookie = new Cookie("userId", String.valueOf(user.getId()));
-            userCookie.setHttpOnly(true);
-            userCookie.setPath("/"); // Accessible to the entire app
-            userCookie.setMaxAge(1 * 24 * 60 * 60); // 7 days
-            response.addCookie(userCookie);
-
-            return ResponseEntity.ok(new ApiResponse<>(true, "Login successful", null));
-        } else {
-            return ResponseEntity.status(401)
-                    .body(new ApiResponse<>(false, "Invalid email or password", null));
-        }
-    }
-
-    @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<UserDTO>> getProfile(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        Long userId = null;
-
-        for (Cookie cookie : cookies) {
-            if ("userId".equals(cookie.getName())) {
-                userId = Long.valueOf(cookie.getValue());
-                break;
-            }
-        }
-
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser(@CookieValue(value = "userId", required = false) Long userId) {
         if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(false, "User not logged in", null));
+            throw new UserNotLoggedInException("User not logged in");
         }
 
         UserDTO userDTO = userService.getUserDtoById(userId);
         return ResponseEntity.ok(new ApiResponse<>(true, "User fetched successfully", userDTO));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<?>> getAllUsers(HttpServletRequest request) {
+        Long userId = getUserIdFromCookie(request);
+
+        UserDTO loggedInUser = userService.getUserDtoById(userId);
+        Role userRole = loggedInUser.getRole();
+
+        if (userRole != Role.LEADERSHIP && userRole != Role.TEAMLEAD) {
+            throw new UnauthorizedAccessException("Access denied. Only Leadership or TeamLead allowed.");
+        }
+
+        List<UserDTO> users = userService.getAllUserDTOs();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Users fetched successfully", users));
+    }
+
+    // Utility method to extract userId from cookie
+    private Long getUserIdFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) throw new UserNotLoggedInException("User not logged in.");;
+
+        for (Cookie cookie : request.getCookies()) {
+            if ("userId".equals(cookie.getName())) {
+                return Long.valueOf(cookie.getValue());
+            }
+        }
+        throw new UserNotLoggedInException("User not logged in.");
     }
 }

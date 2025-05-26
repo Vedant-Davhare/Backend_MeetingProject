@@ -19,7 +19,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleGeneral(Exception ex) {
         ex.printStackTrace();
-        ApiResponse<?> response = new ApiResponse<>(false, "Something went wrong.", null);
+        ApiResponse<?> response = new ApiResponse<>(false, ex.getMessage(), null);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
+
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    public ResponseEntity<ApiResponse<?>> handleUnauthorized(UnauthorizedAccessException ex) {
+        return new ResponseEntity<>(new ApiResponse<>(false, ex.getMessage(), null), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(UserNotLoggedInException.class)
+    public ResponseEntity<ApiResponse<?>> handleUserNotLoggedIn(UserNotLoggedInException ex) {
+        return new ResponseEntity<>(new ApiResponse<>(false, ex.getMessage(), null), HttpStatus.UNAUTHORIZED);
+    }
+
 }
