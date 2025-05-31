@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,10 +23,10 @@ public class Meeting {
     private String description;
 
     @Column(name = "start_time", nullable = false)
-    private LocalDateTime startTime;
+    private LocalTime startTime;
 
     @Column(name = "end_time", nullable = false)
-    private LocalDateTime endTime;
+    private LocalTime endTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
@@ -55,7 +56,7 @@ public class Meeting {
     public Meeting() {
     }
 
-    public Meeting(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, Room room, User host, Set<User> attendees, LocalDateTime createdAt) {
+    public Meeting(Long id, String title, String description, LocalTime startTime, LocalTime endTime, Room room, User host, Set<User> attendees, LocalDateTime createdAt) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -91,19 +92,19 @@ public class Meeting {
         this.description = description;
     }
 
-    public LocalDateTime getStartTime() {
+    public LocalTime getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
+    public void setStartTime(LocalTime startTime) {
         this.startTime = startTime;
     }
 
-    public LocalDateTime getEndTime() {
+    public LocalTime getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(LocalDateTime endTime) {
+    public void setEndTime(LocalTime endTime) {
         this.endTime = endTime;
     }
 

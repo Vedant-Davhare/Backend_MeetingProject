@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 public interface MeetingRepository extends JpaRepository<Meeting, Long> {
@@ -16,5 +17,5 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 
     @Query("SELECT m FROM Meeting m WHERE m.room.id = :roomId " +
             "AND m.startTime < :endTime AND m.endTime > :startTime")
-    List<Meeting> findByRoomIdAndTimeRange(Long roomId, LocalDateTime startTime, LocalDateTime endTime);
+    List<Meeting> findByRoomIdAndTimeRange(Long roomId, LocalTime startTime, LocalTime endTime);
 }
