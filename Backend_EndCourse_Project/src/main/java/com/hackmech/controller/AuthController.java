@@ -1,6 +1,7 @@
 package com.hackmech.controller;
 
 import com.hackmech.dto.LoginRequest;
+import com.hackmech.dto.UserDTO;
 import com.hackmech.entity.User;
 import com.hackmech.payload.ApiResponse;
 import com.hackmech.service.UserService;
@@ -30,7 +31,9 @@ public class AuthController {
             userCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
             response.addCookie(userCookie);
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Login successful", null));
+            UserDTO userDto = new UserDTO(user.getId(),user.getEmail(),user.getMobileNo(),user.getName(),user.getRole(),user.getDepartment().getName());
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Login successful", userDto));
         } else {
             return ResponseEntity.status(401)
                     .body(new ApiResponse<>(false, "Invalid email or password", null));
