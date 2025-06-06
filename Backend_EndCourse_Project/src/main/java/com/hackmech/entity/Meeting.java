@@ -3,10 +3,10 @@ package com.hackmech.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-
 
 @Entity
 @Table(name = "meetings")
@@ -27,6 +27,9 @@ public class Meeting {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
+    @Column(name = "meeting_date", nullable = false)
+    private LocalDate meetingDate;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
@@ -34,7 +37,7 @@ public class Meeting {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "host_id", nullable = false)
     @JsonIgnore
-    private User host;  // Must be LEADERSHIP or TEAMLEAD
+    private User host;
 
     @ManyToMany
     @JoinTable(
@@ -47,25 +50,35 @@ public class Meeting {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MeetingStatus status;
+
+    public Meeting() {
+    }
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
 
-    public Meeting() {
-    }
-
-    public Meeting(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, Room room, User host, Set<User> attendees, LocalDateTime createdAt) {
+    public Meeting(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime,
+                   LocalDate meetingDate, Room room, User host, Set<User> attendees,
+                   LocalDateTime createdAt, MeetingStatus status) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.meetingDate = meetingDate;
         this.room = room;
         this.host = host;
         this.attendees = attendees;
         this.createdAt = createdAt;
+        this.status = status;
     }
+
+    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -107,6 +120,14 @@ public class Meeting {
         this.endTime = endTime;
     }
 
+    public LocalDate getMeetingDate() {
+        return meetingDate;
+    }
+
+    public void setMeetingDate(LocalDate meetingDate) {
+        this.meetingDate = meetingDate;
+    }
+
     public Room getRoom() {
         return room;
     }
@@ -139,6 +160,14 @@ public class Meeting {
         this.createdAt = createdAt;
     }
 
+    public MeetingStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(MeetingStatus status) {
+        this.status = status;
+    }
+
     @Override
     public String toString() {
         return "Meeting{" +
@@ -147,10 +176,12 @@ public class Meeting {
                 ", description='" + description + '\'' +
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +
+                ", meetingDate=" + meetingDate +
                 ", room=" + room +
                 ", host=" + host +
                 ", attendees=" + attendees +
                 ", createdAt=" + createdAt +
+                ", status=" + status +
                 '}';
     }
 }

@@ -4,10 +4,7 @@ import com.hackmech.dto.MeetingDTO;
 import com.hackmech.dto.MeetingRequestDTO;
 import com.hackmech.dto.RoomDTO;
 import com.hackmech.dto.UserDTO;
-import com.hackmech.entity.Meeting;
-import com.hackmech.entity.Role;
-import com.hackmech.entity.Room;
-import com.hackmech.entity.User;
+import com.hackmech.entity.*;
 import com.hackmech.exception.MeetingConflictException;
 import com.hackmech.exception.ResourceNotFoundException;
 import com.hackmech.exception.UnauthorizedAccessException;
@@ -19,6 +16,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class MeetingService {
+
     @Autowired
     private MeetingRepository meetingRepository;
 
@@ -37,19 +36,12 @@ public class MeetingService {
 
     public List<MeetingDTO> getMeetingsByHostId(Long userId) {
         List<Meeting> meetings = meetingRepository.findByHostId(userId);
-
-        return meetings.stream()
-                .map(this::convertToMeetingDTO).collect(Collectors.toList());
+        return meetings.stream().map(this::convertToMeetingDTO).collect(Collectors.toList());
     }
 
     public List<MeetingDTO> getMeetingsByAttendeeId(Long userId) {
         List<Meeting> meetings = meetingRepository.findMeetingsByAttendeeId(userId);
-
-        return meetings.stream().map(meeting -> {
-            String roomName = meeting.getRoom() != null ? meeting.getRoom().getName() : null;
-
-            return convertToMeetingDTO(meeting);
-        }).collect(Collectors.toList());
+        return meetings.stream().map(this::convertToMeetingDTO).collect(Collectors.toList());
     }
 
     private MeetingDTO convertToMeetingDTO(Meeting meeting) {
@@ -65,9 +57,7 @@ public class MeetingService {
                         meeting.getRoom().getLocation(),
                         meeting.getRoom().getCapacity()
                 ),
-                meeting.getAttendees().stream()
-                        .map(this::convertToUserDTO)
-                        .collect(Collectors.toList())
+                meeting.getAttendees().stream().map(this::convertToUserDTO).collect(Collectors.toList())
         );
     }
 
@@ -95,18 +85,23 @@ public class MeetingService {
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
 
-        // Check for conflicting meetings
-        List<Meeting> conflictingMeetings = meetingRepository.findByRoomIdAndTimeRange(
-                room.getId(),
+        LocalDate meetingDate = request.getStartTime().toLocalDate();
+
+        // Check for conflicting scheduled meetings
+        List<Meeting> conflictingMeetings = meetingRepository.findScheduledMeetingsByRoomAndTime(
+                room,
+                meetingDate,
                 request.getStartTime(),
-                request.getEndTime()
+                request.getEndTime(),
+                MeetingStatus.SCHEDULED
         );
 
         for (Meeting conflict : conflictingMeetings) {
             Role conflictingRole = conflict.getHost().getRole();
             if (host.getRole() == Role.LEADERSHIP && conflictingRole == Role.TEAMLEAD) {
-                // Cancel the TEAMLEAD's meeting and notify (email logic pending)
-                meetingRepository.delete(conflict);
+                // Cancel TEAMLEAD's meeting
+                conflict.setStatus(MeetingStatus.CANCELED);
+                meetingRepository.save(conflict);
             } else {
                 throw new MeetingConflictException("Meeting conflict with a higher or equal role meeting.");
             }
@@ -118,10 +113,11 @@ public class MeetingService {
         meeting.setDescription(request.getDescription());
         meeting.setStartTime(request.getStartTime());
         meeting.setEndTime(request.getEndTime());
+        meeting.setMeetingDate(meetingDate);
         meeting.setRoom(room);
         meeting.setHost(host);
+        meeting.setStatus(MeetingStatus.SCHEDULED);
 
-        // Add attendees
         Set<User> attendees = new HashSet<>();
         for (Long id : request.getAttendeeIds()) {
             User attendee = userRepository.findById(id)
@@ -129,10 +125,8 @@ public class MeetingService {
             attendees.add(attendee);
         }
         meeting.setAttendees(attendees);
+
         Meeting createdMeeting = meetingRepository.save(meeting);
-
-
         return convertToMeetingDTO(createdMeeting);
     }
-
 }
