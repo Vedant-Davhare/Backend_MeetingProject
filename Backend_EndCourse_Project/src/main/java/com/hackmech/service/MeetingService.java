@@ -85,16 +85,6 @@ public class MeetingService {
 
     @Transactional
     public MeetingDTO bookMeeting(Long loggedInUserId, MeetingRequestDTO request) {
-        // Validate roomId
-        if (request.getRoomId() == null) {
-            throw new IllegalArgumentException("Room ID must not be null");
-        }
-
-        // Validate attendeeIds list
-        if (request.getAttendeeIds() == null || request.getAttendeeIds().contains(null)) {
-            throw new IllegalArgumentException("Attendee IDs list must not be null and cannot contain null elements");
-        }
-
         User host = userRepository.findById(loggedInUserId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
@@ -114,7 +104,7 @@ public class MeetingService {
 
         for (Meeting conflict : conflictingMeetings) {
             Role conflictingRole = conflict.getHost().getRole();
-            if (host.getRole() == Role.LEADERSHIP || conflictingRole == Role.TEAMLEAD) {
+            if (host.getRole() == Role.LEADERSHIP && conflictingRole == Role.TEAMLEAD) {
                 // Cancel the TEAMLEAD's meeting and notify (email logic pending)
                 meetingRepository.delete(conflict);
             } else {
@@ -139,8 +129,8 @@ public class MeetingService {
             attendees.add(attendee);
         }
         meeting.setAttendees(attendees);
-
         Meeting createdMeeting = meetingRepository.save(meeting);
+
 
         return convertToMeetingDTO(createdMeeting);
     }

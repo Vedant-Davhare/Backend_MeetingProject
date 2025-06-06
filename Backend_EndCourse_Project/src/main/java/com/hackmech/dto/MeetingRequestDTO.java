@@ -1,21 +1,20 @@
 package com.hackmech.dto;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 public class MeetingRequestDTO {
     private String title;
     private String description;
-    private LocalTime startTime;
-    private LocalTime endTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private Long roomId;
     private List<Long> attendeeIds;
 
     public MeetingRequestDTO() {
     }
 
-    public MeetingRequestDTO(String title, String description, LocalTime startTime, LocalTime endTime, Long roomId, List<Long> attendeeIds) {
+    public MeetingRequestDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, Long roomId, List<Long> attendeeIds) {
         this.title = title;
         this.description = description;
         this.startTime = startTime;
@@ -42,19 +41,19 @@ public class MeetingRequestDTO {
         this.description = description;
     }
 
-    public LocalTime getStartTime() {
+    public LocalDateTime getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(LocalTime startTime) {
+    public void setStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
     }
 
-    public LocalTime getEndTime() {
+    public LocalDateTime getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(LocalTime endTime) {
+    public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
     }
 
