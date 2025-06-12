@@ -10,11 +10,12 @@ public class NotificationDTO {
     private String message;
     private Long notificationId;
     private String status;
+    private String description;
 
 
     public NotificationDTO() {}
 
-    public NotificationDTO(Long notificationId, String title, String date, String startTime, String endTime, String roomName, String hostName, String status) {
+    public NotificationDTO(Long notificationId, String title, String date, String startTime, String endTime, String roomName, String hostName, String status, String description) {
         this.notificationId = notificationId;
         this.title = title;
         this.date = date;
@@ -23,16 +24,9 @@ public class NotificationDTO {
         this.roomName = roomName;
         this.hostName = hostName;
         this.status = status;
-        this.message = buildMessage();
+        this.description=description;
     }
 
-// Getters and Setters for notificationId and status
-
-
-    private String buildMessage() {
-        return "Meeting: " + title + " | Date: " + date + " | Time: " +
-                startTime + " - " + endTime + " | Room: " + roomName + " | Host: " + hostName;
-    }
 
     // Getters and Setters
 
@@ -71,5 +65,13 @@ public class NotificationDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

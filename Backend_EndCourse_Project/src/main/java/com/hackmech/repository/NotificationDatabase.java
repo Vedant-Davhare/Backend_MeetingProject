@@ -29,6 +29,7 @@ public class NotificationDatabase {
                 m.meeting_date,
                 m.start_time,
                 m.end_time,
+                m.description,
                 r.name AS room_name,
                 host.name AS host_name
             FROM meeting_attendees ma
@@ -57,8 +58,9 @@ public class NotificationDatabase {
             String endTime = rs.getString("end_time").split(" ")[1];
             String room = rs.getString("room_name");
             String host = rs.getString("host_name");
+            String description = rs.getString("description");
 
-            return new NotificationDTO(notificationId, title, date, startTime, endTime, room, host, status);
+            return new NotificationDTO(notificationId, title, date, startTime, endTime, room, host, status,description);
         }
     }
 
