@@ -22,26 +22,28 @@ public class NotificationDatabase {
 
     public List<NotificationDTO> getUpcomingMeetingsForUser(Long userId) {
         String sql = """
-            SELECT
-                ma.id AS notification_id,
-                ma.status,
-                m.title AS meeting_title,
-                m.meeting_date,
-                m.start_time,
-                m.end_time,
-                m.description,
-                r.name AS room_name,
-                host.name AS host_name
-            FROM meeting_attendees ma
-            JOIN user u ON ma.user_id = u.id
-            JOIN meetings m ON ma.meeting_id = m.id
-            JOIN rooms r ON m.room_id = r.id
-            JOIN user host ON m.host_id = host.id
-            WHERE u.id = ?
-              AND m.status = 'SCHEDULED'
-              AND (m.meeting_date > CURDATE()
-                   OR (m.meeting_date = CURDATE() AND m.end_time > NOW()))
-            ORDER BY m.meeting_date ASC, m.start_time ASC
+           SELECT
+                       ma.id AS notification_id,
+                       ma.status,
+                       m.title AS meeting_title,
+                       m.meeting_date,
+                       m.start_time,
+                       m.end_time,
+                       m.description,
+                       r.name AS room_name,
+                       host.name AS host_name
+                   FROM meeting_attendees ma
+                   JOIN user u ON ma.user_id = u.id
+                   JOIN meetings m ON ma.meeting_id = m.id
+                   JOIN rooms r ON m.room_id = r.id
+                   JOIN user host ON m.host_id = host.id
+                   WHERE u.id = ?
+                     AND m.status = 'SCHEDULED'
+                     AND ma.status = 'PENDING'
+                     AND (m.meeting_date > CURDATE()
+                          OR (m.meeting_date = CURDATE() AND m.end_time > NOW()))
+                   ORDER BY m.meeting_date ASC, m.start_time ASC
+           
         """;
 
         return jdbcTemplate.query(sql, new Object[]{userId}, new NotificationRowMapper());
