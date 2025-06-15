@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 
 public class MeetingHistoryDTO {
     private Long meetingId;
+    private String hostName;
+    private String roomName;
     private String title;
     private String description;
     private String meetingDate;
@@ -17,7 +19,7 @@ public class MeetingHistoryDTO {
 
     public MeetingHistoryDTO(Long meetingId, String title, String description,
                              String meetingDate, String startTime,
-                             String endTime, String status) {
+                             String endTime, String status, String hostName,String roomName) {
         this.meetingId = meetingId;
         this.title = title;
         this.description = description;
@@ -25,9 +27,28 @@ public class MeetingHistoryDTO {
         this.startTime = startTime;
         this.endTime = endTime;
         this.status = status;
+        this.hostName=hostName;
+        this.roomName=roomName;
     }
 
     // Getters and setters
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+
+    public String getRoomName() {
+        return roomName;
+    }
+
+    public void setRoomName(String roomName) {
+        this.roomName = roomName;
+    }
+
     public Long getMeetingId() { return meetingId; }
     public void setMeetingId(Long meetingId) { this.meetingId = meetingId; }
 
