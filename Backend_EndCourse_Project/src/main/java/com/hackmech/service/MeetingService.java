@@ -34,6 +34,9 @@ public class MeetingService {
     @Autowired
     private RoomRepository roomRepository;
 
+    @Autowired
+    private EmailSenderService emailSenderService;
+
     public List<MeetingDTO> getMeetingsByHostId(Long userId) {
         List<Meeting> meetings = meetingRepository.findByHostId(userId);
         return meetings.stream().map(this::convertToMeetingDTO).collect(Collectors.toList());
@@ -72,9 +75,9 @@ public class MeetingService {
                 user.getCreatedAt()
         );
     }
-
     @Transactional
     public MeetingDTO bookMeeting(Long loggedInUserId, MeetingRequestDTO request) {
+        // 1. Fetch host user
         User host = userRepository.findById(loggedInUserId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
@@ -82,14 +85,15 @@ public class MeetingService {
             throw new UnauthorizedAccessException("Only LEADERSHIP or TEAMLEAD can book meetings");
         }
 
+        // 2. Fetch room
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
 
         LocalDate meetingDate = request.getStartTime().toLocalDate();
 
-        // Check for conflicting scheduled meetings
+        // 3. Conflict checking
         List<Meeting> conflictingMeetings = meetingRepository.findScheduledMeetingsByRoomAndTime(
-                room,
+                room.getId(),
                 meetingDate,
                 request.getStartTime(),
                 request.getEndTime(),
@@ -98,16 +102,18 @@ public class MeetingService {
 
         for (Meeting conflict : conflictingMeetings) {
             Role conflictingRole = conflict.getHost().getRole();
+
             if (host.getRole() == Role.LEADERSHIP && conflictingRole == Role.TEAMLEAD) {
-                // Cancel TEAMLEAD's meeting
                 conflict.setStatus(MeetingStatus.CANCELED);
                 meetingRepository.save(conflict);
+            } else if (host.getRole() == conflictingRole) {
+                throw new MeetingConflictException("A meeting is already scheduled by the same role in this room and time.");
             } else {
                 throw new MeetingConflictException("Meeting conflict with a higher or equal role meeting.");
             }
         }
 
-        // Create and save the new meeting
+        // 4. Create meeting entity
         Meeting meeting = new Meeting();
         meeting.setTitle(request.getTitle());
         meeting.setDescription(request.getDescription());
@@ -118,15 +124,45 @@ public class MeetingService {
         meeting.setHost(host);
         meeting.setStatus(MeetingStatus.SCHEDULED);
 
+        // 5. Set attendees
         Set<User> attendees = new HashSet<>();
-        for (Long id : request.getAttendeeIds()) {
-            User attendee = userRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Attendee not found with ID: " + id));
+        for (Long attendeeId : request.getAttendeeIds()) {
+            User attendee = userRepository.findById(attendeeId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Attendee not found with ID: " + attendeeId));
             attendees.add(attendee);
         }
         meeting.setAttendees(attendees);
 
+        // 6. Save meeting to DB first (transaction starts here)
         Meeting createdMeeting = meetingRepository.save(meeting);
+
+        // 7. Send emails (outside main logic — failures will be logged, but DB changes are preserved)
+        for (User attendee : attendees) {
+            sendInvitationEmailSafely(createdMeeting, attendee);
+        }
+
+        // 8. Return DTO
         return convertToMeetingDTO(createdMeeting);
     }
+    private void sendInvitationEmailSafely(Meeting meeting, User attendee) {
+        String subject = "Meeting Invitation: " + meeting.getTitle();
+        String body = "Dear " + attendee.getName() + ",\n\n" +
+                "You have been invited to a meeting.\n\n" +
+                "Host: " + meeting.getHost().getName() + "\n"+
+                "Title: " + meeting.getTitle() + "\n" +
+                "Description: " + meeting.getDescription() + "\n" +
+                "Date: " + meeting.getMeetingDate() + "\n" +
+                "Start Time: " + meeting.getStartTime() + "\n" +
+                "End Time: " + meeting.getEndTime() + "\n" +
+                "Room: " + meeting.getRoom().getName() + ", " + meeting.getRoom().getLocation() + "\n\n" +
+                "Regards,\nMeeting Scheduler Team";
+
+        // Queue it
+        emailSenderService.queueEmail(attendee.getEmail(), subject, body);
+    }
+
+
+
+
 }
+
